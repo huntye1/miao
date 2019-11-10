@@ -1,0 +1,314 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <title>cnodejs</title>
+  <script src="./vue.js"></script>
+  <script src="./vuex.js"></script>
+  <script src="./vue-router.js"></script>
+  <script src="./axios.min.js"></script>
+  <script src="./lodash.min.js"></script>
+  <!-- 引入样式 -->
+  <link rel="stylesheet" href="https://unpkg.com/element-ui/lib/theme-chalk/index.css">
+  <!-- 引入组件库 -->
+  <script src="https://unpkg.com/element-ui/lib/index.js"></script>
+  <style>
+    body {
+      background-color:rgb(225,225,225);
+    }
+    header{
+      line-height: 50px;
+      background-color: rgb(68,68,68);
+      text-align: center;
+    }
+    .home a {
+      text-decoration: none;
+      color: inherit;
+    }
+    .home nav{
+      margin-top: 20px;
+      line-height: 40px;
+      background-color: #f6f6f6;
+    }
+    .home nav a {
+    color: #80bd01;
+    padding: 3px 4px;
+    border-radius: 3px;
+    margin: 0 10px;
+    cursor: pointer;
+    }
+    .home nav a.active {
+      background-color: #80bd01;
+      color: white;
+    }
+    .home  .item {
+      line-height: 50px;
+      height: 60px;
+      border-bottom: 1px solid gray;
+      position: relative;
+
+    }
+    .home  .top,.tab {
+      background-color: #e5e5e5;
+      color: #999;
+      padding: 2px 4px;
+      border-radius: 3px;
+      font-size: 12px;
+      position: relative;
+      bottom: 26px;
+    }
+    .home  .top {
+      padding: 2px 4px;
+      background: #80bd01;
+    }
+    .home  img {
+      margin: 5px;
+      cursor: pointer;
+    }
+    .home  .count {
+      font-size: 12px;
+      position: absolute;
+      top:43px;
+      line-height: 1.2em;
+    }
+   .home   .title {
+      font-size: 16px;
+      display: inline-block;
+      width: 550px;
+      overflow: hidden;
+      text-overflow:ellipsis;
+      white-space: nowrap;
+    }
+    .home  .reply {
+      color: #9e78c0;
+    }
+    .home  .last-reply{
+      font-size: 10px;
+      float: right;
+    }
+    .home .navbar {
+      text-align: center;
+      margin-top: 10px;
+    }
+    .topic .header {
+      width: 100%;
+      position: relative;
+      border-bottom: 1px solid gray;;
+    }
+    .topic .title{
+      width: 100%;
+      font-size: 26px;
+      margin: 1em 0 ;
+    }
+    .topic ul {
+      display: flow-root;
+      margin: 0;
+    }
+    .topic li {
+      float: left;
+      margin-left: 2em;
+    }
+    .topic .reply-container {
+      border-top: 1px solid gray;
+    }
+    .topic .reply {
+      border-bottom: 1px solid gray;
+      padding-top: 5px;
+    }
+    .topic .bar {
+      background-color: rgb(225,225,225);
+      margin: 0 -200px;
+      padding: 0 200px;
+      height: 30px;
+    }
+    .topic .reply span {
+      font-size: 14px;
+      margin-left: 5px;
+    }
+    .topic .reply-bar {
+      line-height: 50px;
+      font-size: 12px;
+    }
+    .outer-container {
+      padding: 20px;
+      width: 1100px;
+      margin: 0 auto;
+      background-color: #fff;
+    }
+    .markdown-text img {
+      max-width: 100%;
+    }
+    .markdown-text h2 {
+      border-bottom: 1px solid gray;
+      line-height: 1.5em;
+      margin-top: 30px;
+    }
+
+    blockquote {
+      padding: 0 0 0 15px;
+      margin: 0 0 20px;
+      border-left: 5px solid #eee;
+    }
+  </style>
+</head>
+<body>
+
+  <header> <img src="https://static2.cnodejs.org/public/images/cnodejs_light.svg" width="120px"></header>
+  <div id="app">
+    <main>
+      <div class="outer-container">
+        <router-view></router-view>
+      <div>
+    </main>
+  </div>
+
+  <script>
+    let api = axios.create({
+      baseURL:"https://cnodejs.org/api/v1/"
+    })
+
+    let home = {
+      template:`
+        <div class="home">
+          <nav ref="types">
+            <a @click="changeType($event,'all')" class="active">全部</a>
+            <a @click="changeType($event,'good')">精华</a>
+            <a @click="changeType($event,'share')">分享</a>
+            <a @click="changeType($event,'ask')">问答</a>
+            <a @click="changeType($event,'job')">招聘</a>
+        </nav>
+        
+        <div v-for="el in topics.data" class="item">
+          <img :src = "el.author.avatar_url" width="30" :title="el.author.loginname">
+          <span :class="(tab(el) == '置顶' || tab(el) == '精华') ? 'top' : 'tab'">{{tab(el)}}</span>
+          <span class="count">
+            <span class="reply">{{el.reply_count}}</span>/{{el.visit_count}} 
+          </span>
+          <router-link :to="'/topic/' + el.id" class="title" :title="el.title">  {{el.title}} </router-link>
+          <span class="last-reply">最后回复:{{new Date(el.last_reply_at).toLocaleString()}}</span>
+        </div>  
+        <div class="navbar">
+            <el-pagination
+              layout="prev, pager, next"
+              :page-size="40"
+              :total="2000"
+              :current-page="currentPage"
+              @current-change="changePage"
+              >
+            </el-pagination>
+        </div>
+      </div>
+      `,
+      mounted() {
+        this.getTopics()
+      },
+      methods: {
+        changeType(e,type){
+          _.forEach( this.$refs.types.children,it => it.classList.remove("active"));
+          e.target.classList.add("active");
+          this.type = type;
+          this.currentPage = 1;
+          this.getTopics(this.type, this.currentPage);
+        },
+        changePage(cur){
+          this.currentPage = cur;
+          this.getTopics(this.type, this.currentPage);
+        },
+        async getTopics(type = "all",page = "1"){
+          this.topics = (await api.get(`topics?tab=${type}&&page=${page}`)).data
+        },
+        tab(el){
+          if(el.top){
+            return "置顶"
+          }
+          if(el.good){
+            return "精华"
+          }
+          if(el.tab === "share"){
+            return "分享"
+          }
+          if(el.tab === "ask"){
+            return "问答"
+          }
+          if(el.tab ==="job"){
+            return "招聘"
+          }
+        }
+      },
+      data() {
+        return {
+          topics : [],
+          currentPage:1,
+          type:"all",
+        }
+      },
+    }
+
+    let topic = {
+      template:`
+        <div class="topic">
+          <div class="header">
+            <h1 class="title">{{data.title}}</h1>
+            <ul>
+              <li class="visit-count">{{data.visit_count}}次浏览</li>
+              <li class="author">作者 {{data.author.loginname}}</li>
+            </ul>
+          </div>
+          <main v-html="data.content" >
+          </main>
+          <div class="bar"></div>
+          <div class="reply-bar">{{data.replies.length}}回复</div>
+          <div class="reply-container">
+          <div v-for="(reply,index) in data.replies" class="reply">
+              <img :src="reply.author.avatar_url" width="30px">
+              <span>{{reply.author.loginname}}</span>
+              <span>{{index + 1}}楼</span>
+              <div style="padding-left:2em" v-html="reply.content"></div>
+            </div>
+          </div>
+        </div>
+      `,
+      created() {
+        this.getTopicContent();
+      },
+      methods:{
+        async getTopicContent(){
+           this.data =  (await axios.get("https://cnodejs.org/api/v1/topic/" + this.$route.params.id)).data.data;
+           console.log(this.data)
+        }
+      },
+      data(){
+        return {
+          data:{
+            author:{},
+            replies:[]
+          }
+        }
+      }
+    }
+
+
+    let router = new VueRouter({
+      routes: [
+        {
+          path:"/",
+          redirect:"/home"
+        },
+        {
+          path:"/home",
+          component:home,
+        },
+        {
+          path:"/topic/:id",
+          component:topic
+        }
+      ]
+    })
+
+    let app = new Vue({
+      el:"#app",
+      router
+    })
+  </script>
+</body>
+</html>
