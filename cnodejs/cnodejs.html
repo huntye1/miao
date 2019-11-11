@@ -1,5 +1,6 @@
 <!DOCTYPE html>
 <html lang="en">
+
 <head>
   <meta charset="UTF-8">
   <title>cnodejs</title>
@@ -14,41 +15,49 @@
   <script src="https://unpkg.com/element-ui/lib/index.js"></script>
   <style>
     body {
-      background-color:rgb(225,225,225);
+      background-color: rgb(225, 225, 225);
     }
-    header{
+
+    header {
       line-height: 50px;
-      background-color: rgb(68,68,68);
+      background-color: rgb(68, 68, 68);
       text-align: center;
     }
+
     .home a {
       text-decoration: none;
       color: inherit;
     }
-    .home nav{
+
+    .home nav {
       margin-top: 20px;
       line-height: 40px;
       background-color: #f6f6f6;
     }
+
     .home nav a {
-    color: #80bd01;
-    padding: 3px 4px;
-    border-radius: 3px;
-    margin: 0 10px;
-    cursor: pointer;
+      color: #80bd01;
+      padding: 3px 4px;
+      border-radius: 3px;
+      margin: 0 10px;
+      cursor: pointer;
     }
+
     .home nav a.active {
       background-color: #80bd01;
       color: white;
     }
-    .home  .item {
+
+    .home .item {
       line-height: 50px;
       height: 60px;
       border-bottom: 1px solid gray;
       position: relative;
 
     }
-    .home  .top,.tab {
+
+    .home .top,
+    .tab {
       background-color: #e5e5e5;
       color: #999;
       padding: 2px 4px;
@@ -57,87 +66,107 @@
       position: relative;
       bottom: 26px;
     }
-    .home  .top {
+
+    .home .top {
       padding: 2px 4px;
       background: #80bd01;
     }
-    .home  img {
+
+    .home img {
       margin: 5px;
       cursor: pointer;
     }
-    .home  .count {
+
+    .home .count {
       font-size: 12px;
       position: absolute;
-      top:43px;
+      top: 43px;
       line-height: 1.2em;
     }
-   .home   .title {
+
+    .home .title {
       font-size: 16px;
       display: inline-block;
       width: 550px;
       overflow: hidden;
-      text-overflow:ellipsis;
+      text-overflow: ellipsis;
       white-space: nowrap;
     }
-    .home  .reply {
+
+    .home .reply {
       color: #9e78c0;
     }
-    .home  .last-reply{
+
+    .home .last-reply {
       font-size: 10px;
       float: right;
     }
+
     .home .navbar {
       text-align: center;
       margin-top: 10px;
     }
+
     .topic .header {
       width: 100%;
       position: relative;
-      border-bottom: 1px solid gray;;
+      border-bottom: 1px solid gray;
+      ;
     }
-    .topic .title{
+
+    .topic .title {
       width: 100%;
       font-size: 26px;
-      margin: 1em 0 ;
+      margin: 1em 0;
     }
+
     .topic ul {
       display: flow-root;
       margin: 0;
     }
+
     .topic li {
       float: left;
       margin-left: 2em;
     }
+
     .topic .reply-container {
       border-top: 1px solid gray;
     }
+
     .topic .reply {
       border-bottom: 1px solid gray;
       padding-top: 5px;
     }
+
     .topic .bar {
-      background-color: rgb(225,225,225);
+      background-color: rgb(225, 225, 225);
       margin: 0 -200px;
       padding: 0 200px;
       height: 30px;
     }
+
     .topic .reply span {
       font-size: 14px;
       margin-left: 5px;
     }
+
     .topic .reply-bar {
       line-height: 50px;
       font-size: 12px;
     }
+
     .outer-container {
       padding: 20px;
       width: 1100px;
       margin: 0 auto;
       background-color: #fff;
     }
+
     .markdown-text img {
       max-width: 100%;
     }
+
     .markdown-text h2 {
       border-bottom: 1px solid gray;
       line-height: 1.5em;
@@ -149,45 +178,123 @@
       margin: 0 0 20px;
       border-left: 5px solid #eee;
     }
+
+    .fade-enter-active,
+    .fade-leave-active {
+      transition: opacity .5s;
+    }
+
+    .fade-enter,
+    .fade-leave-to {
+      opacity: 0;
+    }
+
+    header {
+      cursor: pointer;
+    }
   </style>
 </head>
+
 <body>
 
-  <header> <img src="https://static2.cnodejs.org/public/images/cnodejs_light.svg" width="120px"></header>
   <div id="app">
+    <header> <img src="https://static2.cnodejs.org/public/images/cnodejs_light.svg" width="120px" @click="goHome">
+    </header>
     <main>
       <div class="outer-container">
-        <router-view></router-view>
-      <div>
+        <transition name="fade" mode="out-in" :duration="{ enter: 1000, leave: 1000 }">
+          <router-view></router-view>
+        </transition>
+        <div>
     </main>
   </div>
 
   <script>
     let api = axios.create({
-      baseURL:"https://cnodejs.org/api/v1/"
+      baseURL: "https://cnodejs.org/api/v1/"
     })
 
+    let store = new Vuex.Store({
+      state: {
+        topics: [],
+        currentPage: 1,
+        type: "all",
+      },
+      mutations: {
+        changeTopics(state, topics) {
+          state.topics = topics;
+        },
+        changeCurrentPage(state, page) {
+          state.currentPage = page;
+        },
+        changeType(state, type) {
+          state.type = type;
+        }
+      },
+      actions: {
+        updateTopics({ state, commit }) {
+          api.get(`topics?tab=${state.type}&&page=${state.currentPage}`).then(res => {
+            commit("changeTopics", res.data.data);
+          })
+        }
+      }
+    })
+
+    let contentBody = {
+      template: `
+      <div>
+        <div v-for="el in topics" class="item">
+            <img :src = "el.author.avatar_url" width="30" :title="el.author.loginname" @click="">
+            <span :class="(tab(el) == '置顶' || tab(el) == '精华') ? 'top' : 'tab'">{{tab(el)}}</span>
+            <span class="count">
+              <span class="reply">{{el.reply_count}}</span>/{{el.visit_count}} 
+            </span>
+            <router-link :to="'/topic/' + el.id" class="title" :title="el.title">  {{el.title}} </router-link>
+            <span class="last-reply">最后回复:{{new Date(el.last_reply_at).toLocaleString()}}</span>
+        </div>  
+      </div>
+      `,
+      computed: {
+        topics() {
+          return this.$store.state.topics;
+        }
+      }
+      ,
+      methods: {
+        tab(el) {
+          if (el.top) {
+            return "置顶"
+          }
+          if (el.good) {
+            return "精华"
+          }
+          if (el.tab === "share") {
+            return "分享"
+          }
+          if (el.tab === "ask") {
+            return "问答"
+          }
+          if (el.tab === "job") {
+            return "招聘"
+          }
+        }
+      },
+    }
+
     let home = {
-      template:`
+      template: `
         <div class="home">
           <nav ref="types">
-            <a @click="changeType($event,'all')" class="active">全部</a>
-            <a @click="changeType($event,'good')">精华</a>
-            <a @click="changeType($event,'share')">分享</a>
-            <a @click="changeType($event,'ask')">问答</a>
-            <a @click="changeType($event,'job')">招聘</a>
-        </nav>
-        
-        <div v-for="el in topics.data" class="item">
-          <img :src = "el.author.avatar_url" width="30" :title="el.author.loginname">
-          <span :class="(tab(el) == '置顶' || tab(el) == '精华') ? 'top' : 'tab'">{{tab(el)}}</span>
-          <span class="count">
-            <span class="reply">{{el.reply_count}}</span>/{{el.visit_count}} 
-          </span>
-          <router-link :to="'/topic/' + el.id" class="title" :title="el.title">  {{el.title}} </router-link>
-          <span class="last-reply">最后回复:{{new Date(el.last_reply_at).toLocaleString()}}</span>
-        </div>  
-        <div class="navbar">
+            <a @click="changeType('all')" :class="curType ==='all' && 'active'">全部</a>
+            <a @click="changeType('good')" :class="curType ==='good' && 'active'">精华</a>
+            <a @click="changeType('share')" :class="curType ==='share' && 'active'">分享</a>
+            <a @click="changeType('ask')" :class="curType ==='ask' && 'active'">问答</a>
+            <a @click="changeType('job')" :class="curType ==='job' && 'active'">招聘</a>
+          </nav>
+          <transition name="fade" mode="out-in" :duration="{ enter: 1000, leave: 1000 }">
+            <router-view></router-view>
+          </transition>
+          <div class="navbar">
             <el-pagination
               layout="prev, pager, next"
               :page-size="40"
@@ -199,53 +306,40 @@
         </div>
       </div>
       `,
-      mounted() {
-        this.getTopics()
-      },
+
       methods: {
-        changeType(e,type){
-          _.forEach( this.$refs.types.children,it => it.classList.remove("active"));
-          e.target.classList.add("active");
-          this.type = type;
-          this.currentPage = 1;
-          this.getTopics(this.type, this.currentPage);
+        changeType(type) {
+          this.$store.commit("changeCurrentPage", 1);
+          this.$store.commit("changeType", type);
+          this.$store.dispatch("updateTopics");
+          let path = "/home/" + type;
+          if (path === this.$route.fullPath) {
+            return;
+          }
+          this.$router.push(path);
         },
-        changePage(cur){
-          this.currentPage = cur;
-          this.getTopics(this.type, this.currentPage);
+        changePage(cur) {
+
+          this.$store.commit("changeCurrentPage", cur);
+          this.$store.dispatch("updateTopics");
         },
-        async getTopics(type = "all",page = "1"){
-          this.topics = (await api.get(`topics?tab=${type}&&page=${page}`)).data
-        },
-        tab(el){
-          if(el.top){
-            return "置顶"
-          }
-          if(el.good){
-            return "精华"
-          }
-          if(el.tab === "share"){
-            return "分享"
-          }
-          if(el.tab === "ask"){
-            return "问答"
-          }
-          if(el.tab ==="job"){
-            return "招聘"
-          }
-        }
       },
-      data() {
-        return {
-          topics : [],
-          currentPage:1,
-          type:"all",
+      mounted() {
+        this.$store.dispatch("updateTopics");
+      }
+      ,
+      computed: {
+        currentPage() {
+          return this.$store.state.currentPage;
+        },
+        curType() {
+          return this.$store.state.type;
         }
       },
     }
 
     let topic = {
-      template:`
+      template: `
         <div class="topic">
           <div class="header">
             <h1 class="title">{{data.title}}</h1>
@@ -271,44 +365,129 @@
       created() {
         this.getTopicContent();
       },
-      methods:{
-        async getTopicContent(){
-           this.data =  (await axios.get("https://cnodejs.org/api/v1/topic/" + this.$route.params.id)).data.data;
-           console.log(this.data)
+      methods: {
+        async getTopicContent() {
+          this.data = (await axios.get("https://cnodejs.org/api/v1/topic/" + this.$route.params.id)).data.data;
+          console.log(this.data)
         }
       },
-      data(){
+      data() {
         return {
-          data:{
-            author:{},
-            replies:[]
+          data: {
+            author: {},
+            replies: []
           }
         }
       }
     }
 
 
+    let all = {
+      template: `
+      <div>
+        <contentBody></contentBody>
+      </div>
+      `,
+      components: {
+        contentBody
+      },
+    }
+
+    let good = {
+      template: `
+        <contentBody></contentBody>
+      `,
+      components: {
+        contentBody
+      },
+    }
+    let share = {
+      template: `
+        <contentBody></contentBody>
+      `,
+      components: {
+        contentBody
+      },
+    }
+    let ask = {
+      template: `
+        <contentBody></contentBody>
+      `,
+      components: {
+        contentBody
+      },
+    }
+    let job = {
+      template: `
+        <contentBody></contentBody>
+      `,
+      components: {
+        contentBody
+      },
+    }
     let router = new VueRouter({
       routes: [
         {
-          path:"/",
-          redirect:"/home"
+          path: "/",
+          redirect: "/home"
         },
         {
-          path:"/home",
-          component:home,
+          path: "/home",
+          component: home,
+          children: [
+            {
+              path: "/",
+              redirect: "all",
+            },
+            {
+              path: 'all',
+              component: all,
+            },
+            {
+              path: "good",
+              component: good,
+            },
+            {
+              path: "share",
+              component: share,
+            },
+            {
+              path: "ask",
+              component: ask
+            },
+            {
+              path: "job",
+              component: job,
+            }
+          ]
         },
         {
-          path:"/topic/:id",
-          component:topic
+          path: "/topic/:id",
+          component: topic
         }
       ]
     })
 
+
+
     let app = new Vue({
-      el:"#app",
-      router
+      el: "#app",
+      router,
+      store,
+      methods: {
+        goHome() {
+          this.$store.commit("changeCurrentPage", 1);
+          this.$store.commit("changeType", "all");
+          this.$store.dispatch("updateTopics");
+          let path = "/home/all"
+          if (path === this.$route.fullPath) {
+            return;
+          }
+          this.$router.push(path);
+        }
+      }
     })
   </script>
 </body>
+
 </html>
