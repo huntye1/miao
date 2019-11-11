@@ -76,7 +76,7 @@ Released under the MIT license: http://jsbin.mit-license.org
       transform-origin: 50% 150px;
     }
 
-    .second {
+    .secondWapper .second {
       transform: rotate(0deg);
       animation: rotate infinite 60s linear both;
       animation-timing-function: steps(60);
@@ -91,10 +91,11 @@ Released under the MIT license: http://jsbin.mit-license.org
       transform-origin: 50% 160px;
     }
 
-    .minute {
+    .minuteWapper .minute {
       transform: rotate(0deg);
-      animation: rotate infinite 3600s linear both;
-      animation-timing-function: steps(60);
+      transition: 1s;
+      /* animation: rotate infinite 3600s linear both;
+      animation-timing-function: steps(60); */
     }
 
     .hour .l {
@@ -106,10 +107,10 @@ Released under the MIT license: http://jsbin.mit-license.org
       border-radius: 7px 7px 0 0;
     }
 
-    .hour {
+    .hourWapper .hour {
       transform: rotate(0deg);
       animation: rotate infinite 43200s linear both;
-      animation-timing-function: steps(43200);
+      /* animation-timing-function: steps(43200); */
     }
 
     @keyframes shake {
@@ -219,18 +220,95 @@ Released under the MIT license: http://jsbin.mit-license.org
     <div>12</div>
     <div class="middle">
     </div>
-    <div class="hour">
-      <div class="l"></div>
+    <div class="hourWapper">
+      <div class="hour">
+        <div class="l"></div>
+      </div>
     </div>
 
-    <div class="minute">
-      <div class="l"></div>
+    <div class="minuteWapper">
+      <div class="minute">
+        <div class="l"></div>
+      </div>
     </div>
 
-    <div class="second">
-      <div class="l"></div>
+    <div class="secondWapper">
+      <div class="second">
+        <div class="l"></div>
+      </div>
     </div>
+
   </section>
+  <script>
+    const hourEl = document.querySelector(".hourWapper");
+    const minuteEl = document.querySelector(".minuteWapper");
+    const secondEl = document.querySelector(".secondWapper");
+
+
+    const initTime = new Date();
+    let initHour = (initTime.getMinutes() / 60 + initTime.getHours()) / 12  * 360;
+    let initMinute = initTime.getMinutes() / 60 * 360;
+    let initSecond = initTime.getSeconds() / 60 * 360;
+
+    // const styleSheet = document.styleSheets[0];
+
+    // styleSheet.insertRule(`
+    //   @keyframes second {
+    //     0% {
+    //       transform:rotate(${initSecond}deg)
+    //     }
+    //     100% {
+    //       transform:rotate(${initSecond + 360}deg)
+    //     }
+    //   }
+    // `)
+
+    // styleSheet.insertRule(`
+    //   @keyframes minute {
+    //     0% {
+    //       transform:rotate(${initMinute}deg)
+    //     }
+    //     100% {
+    //       transform:rotate(${initMinute + 360}deg)
+    //     }
+    //   }
+    // `)
+
+    // styleSheet.insertRule(`
+    //   @keyframes hour {
+    //     0% {
+    //       transform:rotate(${initHour}deg)
+    //     }
+    //     100% {
+    //       transform:rotate(${initHour + 360}deg)
+    //     }
+    //   }
+    // `)
+
+
+
+    setTimeout(() => {
+      secondEl.style.transform = `rotate(${initSecond}deg)`
+      minuteEl.style.transform = `rotate(${initMinute}deg)`
+      hourEl.style.transform = `rotate(${initHour}deg)`
+    })  //指针初始转动动画
+
+    setTimeout(() => {
+      document.querySelector(".second .l").style.animation = "shake 1s 1s infinite ease"
+    }) // 保证到位后抖动。
+
+    setInterval(() => {
+      let cur  = new Date().getMinutes() / 60 * 360;
+      if(cur === initMinute){
+        return;
+      }
+      setTimeout(() => {
+        initMinute = cur;
+        minuteEl.style.transform = `rotate(${initMinute}deg)`
+      },1000)
+
+    }, 1000)  //转一分钟
+  </script>
 </body>
 
 </html>
